@@ -9,7 +9,7 @@ namespace aspNet_JWT_Auth.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<User>().HasKey(u => u.Username);
+            modelBuilder.Entity<User>().HasKey(u => u.Id);
         }
     }
 }
