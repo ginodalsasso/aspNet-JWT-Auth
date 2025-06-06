@@ -57,7 +57,8 @@ namespace aspNet_JWT_Auth.Services
             // {} = a collection of claims that will be included in the JWT token
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role),
             };
 
             // Create a symmetric security key using the secret key from configuration

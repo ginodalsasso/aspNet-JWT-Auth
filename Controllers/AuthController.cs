@@ -39,5 +39,13 @@ namespace aspNet_JWT_Auth.Controllers
         {
             return Ok("You're Authenticated!");
         }
+
+
+        [Authorize(Roles = "Admin")] // Can by multiple roles, e.g. Roles = "Admin,User"
+        [HttpGet("admin-only")]
+        public IActionResult AdminOnlyEndpoint()
+        {
+            return Ok("You're Admin!");
+        }
     }
 }
