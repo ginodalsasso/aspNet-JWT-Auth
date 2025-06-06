@@ -6,13 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace aspNet_JWT_Auth.Services
 {
     public class AuthService(AppDbContext context, IConfiguration configuration) : IAuthService
     {
-        public async Task<string?> LoginAsync(UserDto request)
+        public async Task<TokenResponseDto?> LoginAsync(UserDto request)
         {
             var user = await context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
             if (user is null)
@@ -28,7 +29,13 @@ namespace aspNet_JWT_Auth.Services
                 return null;
             }
 
-            return CreateToken(user);
+            var response = new TokenResponseDto
+            {
+                AccessToken = CreateToken(user),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
+            };
+
+            return response;
         }
 
         public async Task<User?> RegisterAsync(UserDto request)
@@ -49,6 +56,28 @@ namespace aspNet_JWT_Auth.Services
 
             return user;
         }
+
+        private string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[32]; // 32 bytes = 256 bits
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes); // Convert to Base64 string for storage
+        }
+
+        private async Task<string> GenerateAndSaveRefreshTokenAsync(User user)
+        {
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshToken = refreshToken; // Save the refresh token to the user entity
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // 7 days expiry
+
+            await context.SaveChangesAsync();
+
+            return refreshToken;
+        }
+
 
         private string CreateToken(User user)
         {
