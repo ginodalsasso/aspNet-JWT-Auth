@@ -1,4 +1,5 @@
 using aspNet_JWT_Auth.Data;
+using aspNet_JWT_Auth.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -17,6 +18,9 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register the AuthService
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
