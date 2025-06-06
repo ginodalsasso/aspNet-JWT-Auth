@@ -1,14 +1,8 @@
 ﻿using aspNet_JWT_Auth.Entities;
 using aspNet_JWT_Auth.Models;
 using aspNet_JWT_Auth.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace aspNet_JWT_Auth.Controllers
 {
@@ -37,6 +31,13 @@ namespace aspNet_JWT_Auth.Controllers
                 return BadRequest("Invalid username or password");
             }
             return Ok(token);
+        }
+
+        [Authorize] // This endpoint requires authentication
+        [HttpGet]
+        public IActionResult AuthenticatedOnlyEndpoint()
+        {
+            return Ok("You're Authenticated!");
         }
     }
 }
