@@ -13,6 +13,11 @@ namespace aspNet_JWT_Auth.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDto request) // Registers a new user and returns the user object
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState); // renvoie les erreurs de validation au client
+            }
+
             var user = await authService.RegisterAsync(request);
             if (user is null)
             {

@@ -44,7 +44,9 @@ namespace aspNet_JWT_Auth.Services
             var user = new User();
             var hashedPassword = new PasswordHasher<User>()
                 .HashPassword(user, request.PasswordHash);
-            user.Username = request.Username;
+            user.Username = request.Username
+                .ToLower()
+                .Trim();
             user.PasswordHash = hashedPassword;
 
             context.Users.Add(user);
