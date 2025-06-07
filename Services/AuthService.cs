@@ -13,7 +13,7 @@ namespace aspNet_JWT_Auth.Services
 {
     public class AuthService(AppDbContext context, IConfiguration configuration) : IAuthService
     {
-        public async Task<TokenResponseDto?> LoginAsync(UserDto request)
+        public async Task<TokenResponseDto?> LoginAsync(UserDto request) // Authenticates the user and returns a JWT token
         {
             var user = await context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
             if (user is null)
@@ -34,16 +34,7 @@ namespace aspNet_JWT_Auth.Services
             return response;
         }
 
-        private async Task<TokenResponseDto> CreateTokenResponse(User? user)
-        {
-            return new TokenResponseDto
-            {
-                AccessToken = CreateToken(user),
-                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
-            };
-        }
-
-        public async Task<User?> RegisterAsync(UserDto request)
+        public async Task<User?> RegisterAsync(UserDto request) // Registers a new user and returns the user object
         {
             if (await context.Users.AnyAsync(u => u.Username == request.Username))
             {
@@ -62,7 +53,22 @@ namespace aspNet_JWT_Auth.Services
             return user;
         }
 
-        public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
+        public async Task<bool> LogoutAsync(LogoutRequestDto request) // Logs out the user by invalidating the refresh token
+        {
+            var user = await context.Users.FindAsync(request.UserId);
+            if (user is null || user.RefreshToken != request.RefreshToken)
+            {
+                return false; // Invalid user or refresh token
+            }
+            user.RefreshToken = null; // Invalidate the refresh token
+            user.RefreshTokenExpiryTime = null; // Reset expiry time
+
+            await context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request) // Creates a JWT token for the user using a refresh token
         {
             var user = await ValidateRefreshTokenAsync(request.UserId, request.RefreshToken);
             if (user is null)
@@ -73,7 +79,7 @@ namespace aspNet_JWT_Auth.Services
             return await CreateTokenResponse(user);
         }
 
-        private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
+        private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken) // Validates the refresh token for the user
         {
             var user = await context.Users.FindAsync(userId);
             if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
@@ -83,7 +89,16 @@ namespace aspNet_JWT_Auth.Services
             return user;
         }
 
-        private string GenerateRefreshToken()
+        private async Task<TokenResponseDto> CreateTokenResponse(User? user) // Creates a JWT token for the user
+        {
+            return new TokenResponseDto
+            {
+                AccessToken = CreateToken(user),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
+            };
+        }
+
+        private string GenerateRefreshToken() // Generates a secure random refresh token
         {
             var randomBytes = new byte[32]; // 32 bytes = 256 bits
             using (var rng = RandomNumberGenerator.Create())
@@ -105,7 +120,7 @@ namespace aspNet_JWT_Auth.Services
         }
 
 
-        private string CreateToken(User user)
+        private string CreateToken(User user) // Creates a JWT token for the user
         {
             // Create claims for the user (e.g., username, roles)
             var claims = new List<Claim>
